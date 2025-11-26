@@ -14,7 +14,7 @@ A web-based interactive learning and tutoring system with AI agent capabilities.
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/agentic-tutor-platform.git
+git clone https://github.com/OleBo/agentic-tutor-platform.git
 cd agentic-tutor-platform
 
 # Install dependencies
