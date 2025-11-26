@@ -1,0 +1,110 @@
+name: Backend CI
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - 'shared/**'
+    branches: [ main, develop ]
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'shared/**'
+    branches: [ main ]
+
+jobs:
+  backend-ci:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        cache-dependency-path: 'backend/package-lock.json'
+
+    - name: Install dependencies
+      run: |
+        cd backend
+        npm ci
+
+    - name: Type check
+      run: |
+        cd backend
+        npm run type-check
+
+    - name: Lint code
+      run: |
+        cd backend
+        npm run lint
+
+    - name: Run unit tests
+      run: |
+        cd backend
+        npm run test:ci
+      env:
+        DATABASE_URL: postgresql://postgres:test@localhost:5432/test_db
+        REDIS_URL: redis://localhost:6379
+        NODE_ENV: test
+
+    - name: Run integration tests
+      run: |
+        cd backend
+        npm run test:integration
+      env:
+        DATABASE_URL: postgresql://postgres:test@localhost:5432/test_db
+        REDIS_URL: redis://localhost:6379
+        NODE_ENV: test
+
+    - name: Run API tests
+      run: |
+        cd backend
+        npm run test:api
+      env:
+        DATABASE_URL: postgresql://postgres:test@localhost:5432/test_db
+        NODE_ENV: test
+
+    - name: Build application
+      run: |
+        cd backend
+        npm run build
+
+    - name: Run security audit
+      run: |
+        cd backend
+        npm audit --audit-level high
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: backend-test-results
+        path: backend/test-results/
+        retention-days: 7
