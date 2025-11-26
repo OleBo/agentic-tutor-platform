@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "lint": "eslint src/ --ext .ts,.tsx",
+    "type-check": "tsc --noEmit",
+    "test": "jest",
+    "test:ci": "jest --ci --coverage",
+    "test:integration": "jest integration --ci",
+    "test:api": "jest api --ci",
+    "test:performance": "artillery run performance.yml",
+    "build": "tsc"
+  }
+}
